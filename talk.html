@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>聊天室</title>
+	<style>
+		.container{
+			margin:10px auto;
+			width:80%;
+			padding:10px;
+			background:#eee;
+			overflow:hidden;
+		}
+
+		.content{
+			background:#fff;
+			height:300px;
+			overflow-y:auto;
+			padding:10px;
+		}
+
+		.content .notice{
+			font-size:12px;
+			font-style:italic;
+			color:#bbb;
+		}
+
+		.send-content{
+			box-sizing: border-box;
+			margin-top:20px;
+			display:block;
+			width:100%;
+			height:100px;
+			border:none;
+			background:#fff;
+			font-size:16px;
+			padding:10px;
+		}
+
+		.btn-group{
+			margin-top:10px;
+			overflow:hidden;
+		}
+		.btn-group button{
+			margin-left:10px;
+			padding:10px 20px;
+			font-size:16px;
+			line-height: 18px;
+			border:1px solid #ccc;
+			background:#f5f5f5;
+			cursor:pointer;
+			float:right;
+		}
+
+		.nick-change-box{
+			margin-top:20px;
+			float:right;	
+		}
+
+		.nick-change-box input{
+			font-size:16px;
+			line-height: 18px;
+			padding:10px;
+			border:1px solid #ccc;
+		}
+
+		.nick-change-box button{
+			font-size:16px;
+			line-height:18px;
+			padding:10px 20px;
+			border:1px solid #ccc;
+			background:#f5f5f5;
+		}
+
+		
+		.message-nickname{
+			color:red;
+			font-weight: bold;
+			padding-right:20px;
+		}
+		.message-msg{
+			font-size:16px;
+		}
+
+	</style>
+</head>
+<body>
+	<div class="container">
+		
+		<div class="content">
+			
+		</div>
+
+		<textarea class="send-content">
+			
+		</textarea>
+
+		<div class="btn-group">
+			<button id="btn1">发送</button>
+			<button>清屏</button>
+		</div>
+
+
+		<div class="nick-change-box">	
+			<input type="" id="nickInput">
+			<button id="btn2">修改昵称</button>
+		</div>
+
+	</div>
+
+	<script src="http://cdn.bootcss.com/jquery/3.1.0/jquery.min.js"></script>
+
+	<script>
+		$(".send-content").focus(); //文本输入框自动获取焦点
+		
+		var ws = new WebSocket("ws://192.168.15.21:8667"); //本机ip
+
+		ws.onopen = function(){
+			console.log("WebSocket 连接成功");
+		}
+
+
+		//接收服务器发送的消息
+		ws.onmessage = function(ev){
+			var msgObj = JSON.parse(ev.data);
+			
+			if (msgObj.type === "notice") {
+				$("<p>").addClass("notice").html(msgObj.message).appendTo(".content");
+			} else if(msgObj.type === "message") {
+				var p = $("<p>").addClass("message");
+				$("<span>").addClass("message-nickname").html(msgObj.nickname+" : ").appendTo(p);
+				$("<span>").addClass("message-msg").html(msgObj.message).appendTo(p);
+
+				p.appendTo(".content");
+			}
+
+			//滚动条 滚下来
+			$(".content").scrollTop($(".content")[0].scrollHeight);
+		}
+
+		//点击发送给 服务器
+		$("#btn1").click(function(){
+			var content = $(".send-content").val().trim();
+
+			if (content.length > 0){ 
+				ws.send(content);
+			
+			}
+
+			$(".send-content").val("").focus();
+		});
+
+
+		//修改昵称 并且发给服务器
+		$("#btn2").click(function(){
+			var nickname = $("#nickInput").val().trim();
+
+			if (nickname.length > 0) {
+				ws.send("nick////"+nickname);
+
+				$("#nickInput").val("");
+			}
+		})
+
+	</script>
+</body>
+</html>
